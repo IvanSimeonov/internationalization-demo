@@ -8,6 +8,15 @@
     - [Create Angular project](#create-agnular-project)
     - [Add Bootstrap and flag-icons libraries](#add-bootstrap-and-flags-icons-libraries)
     - [Update the html and styles](#update-the-html-and-styles)
+  - [Add ngx-translate to the project](#add-ngx-translate-to-the-project)
+  - [Translation Module and HttpLoader Setup](#translation-module-and-httploader-setup)
+  - [Translation Service Setup](#translation-service-setup)
+  - [Creation of JSON Translation files](#creation-of-json-translation-files)
+  - [Translations usage in templates and code](#translations-usage-in-templates-and-code)
+  - [Bonus: HTML Tags](#bonus:html-tags)
+  - [Default Browser language](#default-browser-language)
+  - [Runtime language changes](#runtime-language-changes)
+  - [Bonus: Get Browser Language](#bonus:get-browser-language)
 - [Summary](#summary)
 - [Contact Me](#contact-me)
 
@@ -110,6 +119,372 @@ body {
 }
 ```
 
+After completion of the optional steps described above, we can start the app using `ng serve -o` command and we will see:
+
+<img src="/src/assets/images/app-dashboard.png" style="border: 1px solid black" alt="app-dashboard" />
+
+### Add ngx-translate to the project
+
+In order to use ngx-translate, first we have to install the npm module. Open a terminal in the root folder of your project and run the following command:
+
+```
+npm install @ngx-translate/core
+```
+
+The [@ngx-translate/core](https://github.com/ngx-translate/core) provides the translation's fundamental procedures, such as the TranslateService and the translate pipe.
+
+There is no loader accessible by default. Although `setTranslation` may be used to manually add translations, it is preferable to utilize a loader. You may either develop your own loader or use an existing one. You may, for example, use the TranslateHttpLoader to load translations from files using HttpClient. To use it, simple install the http-loader package with the following command:
+
+```
+npm install @ngx-translate/http-loader
+```
+
+The [@ngx-translate/http-loader](https://github.com/ngx-translate/http-loader) dynamically loads translation files from your web server.
+
+### Translation Module and HttpLoader Setup
+
+Finally, in your Angular project, you may utilize ngx-translate. You must include `TranslateModule.forRoot()` in your application's base NgModule.
+
+The `forRoot` static method is a convention that both offers and configures services. Make sure you only call this function in your application's root module, which is usually called AppModule. You can customize the TranslateModule using this method by supplying a loader, a parser, and/or a missing translations handler.
+
+```
+import {BrowserModule} from '@angular/platform-browser';
+import {NgModule} from '@angular/core';
+import {TranslateModule} from '@ngx-translate/core';
+
+@NgModule({
+    imports: [
+        BrowserModule,
+        TranslateModule.forRoot()
+    ],
+    bootstrap: [AppComponent]
+})
+export class AppModule { }
+
+```
+
+Since we are going to use the `TranslateHttpLoader`, we should also do the following changes in order to load our translations from `"/assets/i18n/[lang].json"`:
+
+- Add the `HttpLoaderFactory function`, that is required for AOT (ahead of time) compilation in your project.
+- Add `HttpClientModule` to the imports array in the `AppModule`
+- Configure the `TranslateModule`
+
+**HttpLoaderFactory method:**
+
+```
+// AoT requires an exported function for factories
+export function HttpLoaderFactory(http: HttpClient) {
+  return new TranslateHttpLoader(http);
+}
+```
+
+**HttpClientModule & TranslateModule configuration**
+
+```
+@NgModule({
+    imports: [
+        BrowserModule,
+        HttpClientModule,
+        TranslateModule.forRoot({
+            loader: {
+                provide: TranslateLoader,
+                useFactory: HttpLoaderFactory,
+                deps: [HttpClient]
+            }
+        })
+    ],
+    bootstrap: [AppComponent]
+})
+
+```
+
+**Complete AppModule (app.module.ts) setup**
+
+```
+import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+
+// AoT requires an exported function for factories
+export function HttpLoaderFactory(http: HttpClient) {
+  return new TranslateHttpLoader(http);
+}
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    HttpClientModule,
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: HttpLoaderFactory,
+        deps: [HttpClient],
+      },
+    }),
+  ],
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+### Translation Service Setup
+
+Since we have configured the `TranslationModule` and the `TranslateHttpLoader`, we can move to the next step and initialize the `TranslateService` of our application. Let's jump into the AppComponent (app.component.ts) and initialize our service in the constructor.
+
+**AppComponent (app.component.ts)**
+
+```
+
+import { Component } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+})
+export class AppComponent {
+
+  constructor(private translateService: TranslateService) {
+    translateService.setDefaultLang('en');
+    translateService.use('en');
+  }
+}
+
+```
+
+As you can see from the code above, we have initialized the translation service. On the other hand, we have also added two other things:
+
+- `translateService.setDefaultLang('en');` - Adds a fallback language when a translation isn't found in the current language
+- `translate.use('en');` - Specifies the language to use, if it isn't available, the current loader will be used to get them
+
+Now let's start the application using the `ng serve -o` command and you shall see the following (if you have followed the optional steps):
+
+<img src="/src/assets/images/app-dashboard.png" style="border: 1px solid black" alt="app-dashboard" />
+
+The applications seems to work, but lets take a look at the browser console, where we have the following error:
+
+```
+
+Failed to load resource: the server responded with a status of 404 (Not Found)
+Cannot GET /assets/i18n/en.json
+
+```
+
+That is not unexpected. We have set the default and the fallback language to be `en` and the `HttpLoader` tries to load them from the server but we've not created that file yet. We will fix this in the next step.
+
+### Creation of JSON Translation files
+
+Our demo application will support four languages: english, german, italian and spanish. Every single language will be stored in a separate JSON file, so let's create one for each. We will place those files in the `/assets/i18n/` as shown below:
+
+<img src="/src/assets/images/app-assets-i18n.png" style="border: 1px solid black" alt="app-dashboard" />
+
+Now, since we've created the JSON files for every language, let's fill them with data following this best practices:
+
+- create detailed keys
+- use capital letters for the keys
+- don't use translation text as IDs
+- separate keys with multiple words with underscore (\_)
+
+**en.json**
+
+```
+{
+  "NAVBAR": {
+    "TITLE": "Internationalization"
+  },
+  "MAIN_CONTENT": {
+    "TITLE": "What is ngx-translate?",
+    "DESC_P1": "NGX-Translate is an internationalization library for Angular. It lets you define translations for your content in different languages and switch between them easily.",
+    "DESC_P2": "It gives you access to a service, a directive and a pipe to handle any dynamic or static content.",
+    "DESC_P3": "NGX-Translate is also extremely modular. It is written in a way that makes it really easy to replace any part with a custom implementation in case the existing one doesn't fit your needs."
+  }
+}
+
+```
+
+**de.json**
+
+```
+{
+  "NAVBAR": {
+    "TITLE": "Internationalisierung"
+  },
+  "MAIN_CONTENT": {
+    "TITLE": "Was ist ngx-translate?",
+    "DESC_P1": "NGX-Translate ist eine Internationalisierungsbibliothek für Angular. Mit ihr können Sie Übersetzungen für Ihre Inhalte in verschiedenen Sprachen definieren und einfach zwischen ihnen wechseln.",
+    "DESC_P2": "Es gibt Ihnen Zugriff auf einen Service, eine Direktive und eine Pipe, um jeden dynamischen oder statischen Inhalt zu verarbeiten.",
+    "DESC_P3": "NGX-Translate ist auch extrem modular. Es ist so geschrieben, dass es sehr einfach ist, jeden Teil durch eine benutzerdefinierte Implementierung zu ersetzen, falls die vorhandene nicht Ihren Bedürfnissen entspricht."
+  }
+}
+
+
+```
+
+**it.json**
+
+```
+{
+  "NAVBAR": {
+    "TITLE": "Internazionalizzazione"
+  },
+  "MAIN_CONTENT": {
+    "TITLE": "Cos'è ngx-translate?",
+    "DESC_P1": "NGX-Translate è una libreria di internazionalizzazione per Angular. Consente di definire traduzioni per i contenuti in diverse lingue e di passare facilmente da una all'altra",
+    "DESC_P2": "Permette di accedere a un servizio, una direttiva e una pipe per gestire qualsiasi contenuto dinamico o statico",
+    "DESC_P3": "NGX-Translate è anche estremamente modulare. È scritto in modo tale da rendere molto semplice la sostituzione di qualsiasi parte con un'implementazione personalizzata, nel caso in cui quella esistente non sia adatta alle proprie esigenze."
+  }
+}
+
+
+```
+
+**es.json**
+
+```
+{
+  "NAVBAR": {
+    "TITLE": "Internacionalización"
+  },
+  "MAIN_CONTENT": {
+    "TITLE": "¿Qué es ngx-translate?",
+    "DESC_P1": "NGX-Translate es una librería de internacionalización para Angular. Te permite definir traducciones para tu contenido en diferentes idiomas y cambiar entre ellas fácilmente.",
+    "DESC_P2": "Te da acceso a un servicio, una directiva y una tubería para manejar cualquier contenido dinámico o estático",
+    "DESC_P3": "NGX-Translate es también extremadamente modular. Está escrito de tal forma que resulta realmente sencillo sustituir cualquier parte por una implementación personalizada en caso de que la existente no se ajuste a tus necesidades."
+  }
+}
+
+```
+
+If you reload the application now and check the browser console, you will see that the error isn't there anymore.
+
+### Translations usage in templates and code
+
+Now our translation JSON files are ready, so we can jump into the AppComponent (app.component.html) and start using them by replacing the static texts with references to the keys in the JSON files. In the `ngx-translate` are described multiple ways to add the translations but we will focus on the most popular and recommended one - using `translation pipe`.
+
+**Ex.:** `{{'key_id' | translate}}`
+
+**AppComponent (app.component.ts) with translations added**
+
+```
+<nav class="navbar navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand">{{ "NAVBAR.TITLE" | translate }}</a>
+    <div class="d-flex">
+      <span class="fi fi-us me-2"></span>
+      <span class="fi fi-de me-2"></span>
+      <span class="fi fi-it me-2"></span>
+      <span class="fi fi-es me-2"></span>
+    </div>
+  </div>
+</nav>
+<div class="container-fluid mt-3">
+  <h1>{{ "MAIN_CONTENT.TITLE" | translate }}</h1>
+  <p>
+    {{ "MAIN_CONTENT.DESC_P1" | translate }}
+  </p>
+  <p>
+    {{ "MAIN_CONTENT.DESC_P2" | translate }}
+  </p>
+  <p>
+    {{ "MAIN_CONTENT.DESC_P3" | translate }}
+  </p>
+</div>
+
+
+```
+
+### Bonus: HTML Tags
+
+We can use raw HTML tags within translations:
+
+**en/de/it/es.json**
+
+```
+  ...
+      "TITLE": "<a href='http://www.ngx-translate.com/'>What is ngx-translate?</a>"
+  ...
+```
+
+And to render them, we simply using the `innerHTML` attribute with pipe:
+
+**AppComponent (app.component.ts)**
+
+```
+  ...
+  <h1 [innerHtml]="'MAIN_CONTENT.TITLE' | translate"></h1>
+  ...
+```
+
+### Runtime language changes
+
+Now we have made all the configuration that we need, JSON files with the translations are created and the last thing that we are missing is to update the UI to switch between the language files we've created. To do so, let's do the following changes:
+
+**Add `changeLanguage` function into the AppComponent (app.component.ts):**
+
+```
+  changeLanguage(language: string): void {
+    this.translateService.use(language);
+  }
+```
+
+**Bind country flags to `click` event in the template (app.component.html):**
+
+```
+<span class="fi fi-us me-2" (click)="changeLanguage('en')"></span>
+<span class="fi fi-de me-2" (click)="changeLanguage('de')"></span>
+<span class="fi fi-it me-2" (click)="changeLanguage('it')"></span>
+<span class="fi fi-es me-2" (click)="changeLanguage('es')"></span>
+```
+
+Now reload the application and click on the different country flag to see the magic happening.
+
+<img src="/src/assets/images/app-usage.gif" style="border: 1px solid black;" alt="app-usage" />
+
+Congrats!!!:clap::clap::clap:
+You have successfully created an Angular application that supports four different languages!
+
+### Bonus: Get Browser Language
+
+If you want to apply the browser language, you can use the `getBrowserLang()` function. Keep in mind that it is really important to preset the default language, so when the browser language isn't found in our `/assets/i18n/` folder, the application will still have a fallback language.
+
+**AppComponent (app.component.ts)**
+
+```
+import { Component } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+})
+export class AppComponent {
+  defaultLang = 'en';
+
+  constructor(private translateService: TranslateService) {
+    translateService.setDefaultLang(this.defaultLang);
+
+    let browserLang = translateService.getBrowserLang();
+    if (browserLang) {
+      translateService.use(browserLang);
+    }
+  }
+
+  changeLanguage(language: string): void {
+    this.translateService.use(language);
+  }
+}
+```
+
 ## Summary
 
 In conclusion, [ngx-translate](http://www.ngx-translate.com/) is a valuable tool for Angular developers who want to add internationalization to their projects. Its ease of use, comprehensive documentation, and active development community make it a reliable and effective solution for adding i18n support. Whether you are building a large, complex application or a simple single-page app, ngx-translate can help you reach a global audience by making your application accessible in multiple languages. So, if you are looking for a way to add i18n support to your Angular project, consider giving ngx-translate a try.
@@ -121,3 +496,7 @@ In conclusion, [ngx-translate](http://www.ngx-translate.com/) is a valuable tool
 - :computer: [GitHub](https://github.com/IvanSimeonov)
 - :iphone: [LinkedIn](https://www.linkedin.com/in/ivannicksimeonov/)
 - :coffee: [Buy Me A Coffee](https://www.buymeacoffee.com/ivssim)
+
+```
+
+```

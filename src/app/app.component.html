@@ -1,25 +1,23 @@
 <nav class="navbar navbar-dark bg-dark fixed-top">
   <div class="container-fluid">
-    <a class="navbar-brand">Internationalization</a>
+    <a class="navbar-brand">{{ "NAVBAR.TITLE" | translate }}</a>
     <div class="d-flex">
-      <span class="fi fi-us me-2"></span>
-      <span class="fi fi-de me-2"></span>
-      <span class="fi fi-it me-2"></span>
-      <span class="fi fi-es me-2"></span>
+      <span class="fi fi-us me-2" (click)="changeLanguage('en')"></span>
+      <span class="fi fi-de me-2" (click)="changeLanguage('de')"></span>
+      <span class="fi fi-it me-2" (click)="changeLanguage('it')"></span>
+      <span class="fi fi-es me-2" (click)="changeLanguage('es')"></span>
     </div>
   </div>
 </nav>
 <div class="container-fluid mt-3">
-  <h1>What is ngx-translate</h1>
+  <h1 [innerHtml]="'MAIN_CONTENT.TITLE' | translate"></h1>
   <p>
-    NGX-Translate is an internationalization library for Angular. It lets you define translations for your content in
-    different languages and switch between them easily.
+    {{ "MAIN_CONTENT.DESC_P1" | translate }}
   </p>
   <p>
-    It gives you access to a service, a directive and a pipe to handle any dynamic or static content.
+    {{ "MAIN_CONTENT.DESC_P2" | translate }}
   </p>
   <p>
-    NGX-Translate is also extremely modular. It is written in a way that makes it really easy to replace any part with a
-    custom implementation in case the existing one doesn't fit your needs.
+    {{ "MAIN_CONTENT.DESC_P3" | translate }}
   </p>
 </div>

@@ -1,0 +1,11 @@
+{
+  "NAVBAR": {
+    "TITLE": "Internationalization"
+  },
+  "MAIN_CONTENT": {
+    "TITLE": "<a href='http://www.ngx-translate.com/'>What is ngx-translate?</a>",
+    "DESC_P1": "NGX-Translate is an internationalization library for Angular. It lets you define translations for your content in different languages and switch between them easily.",
+    "DESC_P2": "It gives you access to a service, a directive and a pipe to handle any dynamic or static content.",
+    "DESC_P3": "NGX-Translate is also extremely modular. It is written in a way that makes it really easy to replace any part with a custom implementation in case the existing one doesn't fit your needs."
+  }
+}

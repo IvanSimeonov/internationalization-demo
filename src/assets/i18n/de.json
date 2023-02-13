@@ -1,0 +1,11 @@
+{
+  "NAVBAR": {
+    "TITLE": "Internationalisierung"
+  },
+  "MAIN_CONTENT": {
+    "TITLE": "<a href='http://www.ngx-translate.com/'>Was ist ngx-translate?</a>",
+    "DESC_P1": "NGX-Translate ist eine Internationalisierungsbibliothek für Angular. Mit ihr können Sie Übersetzungen für Ihre Inhalte in verschiedenen Sprachen definieren und einfach zwischen ihnen wechseln.",
+    "DESC_P2": "Es gibt Ihnen Zugriff auf einen Service, eine Direktive und eine Pipe, um jeden dynamischen oder statischen Inhalt zu verarbeiten.",
+    "DESC_P3": "NGX-Translate ist auch extrem modular. Es ist so geschrieben, dass es sehr einfach ist, jeden Teil durch eine benutzerdefinierte Implementierung zu ersetzen, falls die vorhandene nicht Ihren Bedürfnissen entspricht."
+  }
+}
