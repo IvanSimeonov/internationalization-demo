@@ -13,10 +13,10 @@
   - [Translation Service Setup](#translation-service-setup)
   - [Creation of JSON Translation files](#creation-of-json-translation-files)
   - [Translations usage in templates and code](#translations-usage-in-templates-and-code)
-  - [Bonus: HTML Tags](#bonus:html-tags)
+  - [Bonus HTML Tags](#bonus-html-tags)
   - [Default Browser language](#default-browser-language)
   - [Runtime language changes](#runtime-language-changes)
-  - [Bonus: Get Browser Language](#bonus:get-browser-language)
+  - [Bonus Get Browser Language](#bonus-get-browser-language)
 - [Summary](#summary)
 - [Contact Me](#contact-me)
 
@@ -402,7 +402,7 @@ Now our translation JSON files are ready, so we can jump into the AppComponent (
 
 ```
 
-### Bonus: HTML Tags
+### Bonus HTML Tags
 
 We can use raw HTML tags within translations:
 
@@ -452,7 +452,7 @@ Now reload the application and click on the different country flag to see the ma
 Congrats!!!:clap::clap::clap:
 You have successfully created an Angular application that supports four different languages!
 
-### Bonus: Get Browser Language
+### Bonus Get Browser Language
 
 If you want to apply the browser language, you can use the `getBrowserLang()` function. Keep in mind that it is really important to preset the default language, so when the browser language isn't found in our `/assets/i18n/` folder, the application will still have a fallback language.
 
